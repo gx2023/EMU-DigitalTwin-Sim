@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动车组检修数字孪生仿真系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0ea5e9;
+            --secondary: #3b82f6;
+            --accent: #22d3ee;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #475569;
+            --glass: rgba(15, 23, 42, 0.7);
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--darker);
+            color: var(--light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+        }
+
+        .bg-radial {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08), transparent 50%);
+            z-index: -1;
+            animation: spin 30s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.05;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.95) 0%, rgba(2, 6, 23, 0.8) 100%);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(14, 165, 233, 0.3);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(14, 165, 233, 0.3); }
+            50% { box-shadow: 0 0 50px rgba(14, 165, 233, 0.5); }
+        }
+
+        .logo-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 0.7rem;
+            color: var(--gray);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        nav ul {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+        }
+
+        nav a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .hero-label .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, var(--primary), var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            max-width: 500px;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            animation: fadeInUp 0.6s ease-out 0.8s both;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 10px 40px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 60px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--light);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .hero-right {
+            position: relative;
+            animation: fadeInRight 0.8s ease-out 0.5s both;
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .hero-visual {
+            position: relative;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(34, 211, 238, 0.05));
+            border-radius: 24px;
+            border: 1px solid rgba(34, 211, 238, 0.15);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-visual::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(14, 165, 233, 0.1), transparent 30%, transparent 70%, rgba(34, 211, 238, 0.1), transparent);
+            animation: spin 10s linear infinite;
+        }
+
+        .hero-visual-inner {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            height: 90%;
+            background: rgba(2, 6, 23, 0.8);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .train-model {
+            font-size: 8rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .data-points {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .data-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: data-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes data-pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+        }
+
+        .data-point:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+        .data-point:nth-child(2) { top: 30%; right: 15%; animation-delay: 0.3s; }
+        .data-point:nth-child(3) { bottom: 25%; left: 25%; animation-delay: 0.6s; }
+        .data-point:nth-child(4) { bottom: 35%; right: 20%; animation-delay: 0.9s; }
+        .data-point:nth-child(5) { top: 50%; left: 10%; animation-delay: 1.2s; }
+        .data-point:nth-child(6) { top: 45%; right: 10%; animation-delay: 1.5s; }
+
+        .section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 8px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .section-label::after {
+            content: '';
+            width: 8px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            font-size: 1.05rem;
+            color: #94a3b8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-8px);
+            border-color: rgba(34, 211, 238, 0.3);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(34, 211, 238, 0.1));
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-section {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.5), rgba(2, 6, 23, 0.5));
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .panel-title i {
+            color: var(--accent);
+        }
+
+        .panel-action {
+            padding: 0.5rem 1rem;
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 8px;
+            color: var(--accent);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .device-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .device-item:hover {
+            border-color: rgba(34, 211, 238, 0.3);
+            background: rgba(34, 211, 238, 0.05);
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .device-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .device-status.online {
+            background: var(--success);
+            box-shadow: 0 0 12px var(--success);
+        }
+
+        .device-status.warning {
+            background: var(--warning);
+            box-shadow: 0 0 12px var(--warning);
+        }
+
+        .device-status.danger {
+            background: var(--danger);
+            box-shadow: 0 0 12px var(--danger);
+        }
+
+        .device-status::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.2;
+            animation: ring 2s ease-out infinite;
+        }
+
+        @keyframes ring {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+
+        .device-name {
+            font-size: 0.9rem;
+        }
+
+        .device-metric {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .alert-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
+        }
+
+        .alert-item.danger {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .alert-item.warning {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .alert-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert-item.danger .alert-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .alert-item.warning .alert-icon {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .simulation-section {
+            position: relative;
+        }
+
+        .simulation-layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .simulation-viewer {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .simulation-header {
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .simulation-body {
+            min-height: 400px;
+            background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.05), transparent 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulation-controls {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: rgba(34, 211, 238, 0.3);
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            border-color: rgba(34, 211, 238, 0.3);
+            transform: translateX(4px);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .task-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .task-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-weight: 500;
+        }
+
+        .task-badge.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .task-badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .task-badge.issue {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .task-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .task-progress-bar {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 1s ease;
+        }
+
+        .task-progress-bar.active {
+            background: linear-gradient(90deg, var(--success), var(--accent));
+        }
+
+        .task-progress-bar.pending {
+            background: linear-gradient(90deg, var(--warning), var(--accent));
+        }
+
+        .task-progress-bar.issue {
+            background: linear-gradient(90deg, var(--danger), var(--warning));
+        }
+
+        .analytics-section {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.3), rgba(2, 6, 23, 0.3));
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .about-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .about-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .about-title i {
+            color: var(--accent);
+        }
+
+        .about-text {
+            font-size: 1rem;
+            color: #94a3b8;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .value-item {
+            text-align: center;
+            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .value-item:hover {
+            border-color: rgba(34, 211, 238, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .value-icon {
+            font-size: 1.5rem;
+            color: var(--success);
+            margin-bottom: 0.75rem;
+        }
+
+        .value-text {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        footer {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.95));
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .footer-logo-text p {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .footer-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.7;
+        }
+
+        .footer-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            color: #cbd5e1;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .footer-contact-item i {
+            width: 20px;
+            color: var(--accent);
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .footer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-social a:hover {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: rgba(34, 211, 238, 0.3);
+            color: var(--accent);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-copyright {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .footer-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        @media (max-width: 1200px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dashboard-grid,
+            .simulation-layout,
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .value-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .value-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            nav ul {
+                display: none;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-radial"></div>
+    <div class="grain"></div>
+
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fa fa-train fa-lg"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>EMU DIGITAL TWIN</h1>
+                    <p>动车组检修数字孪生系统</p>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard"><i class="fa fa-dashboard"></i> 仪表盘</a></li>
+                    <li><a href="#features"><i class="fa fa-cubes"></i> 功能模块</a></li>
+                    <li><a href="#simulation"><i class="fa fa-cube"></i> 仿真中心</a></li>
+                    <li><a href="#analytics"><i class="fa fa-chart-line"></i> 数据分析</a></li>
+                    <li><a href="#about"><i class="fa fa-info-circle"></i> 关于系统</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-left">
+                <div class="hero-label">
+                    <span class="dot"></span>
+                    <span>系统在线运行中</span>
+                    <span>•</span>
+                    <span>v2.0.0</span>
+                </div>
+                <h2 class="hero-title">
+                    智能检修<br>
+                    <span>数字孪生</span>
+                </h2>
+                <p class="hero-desc">
+                    基于Unity引擎构建的动车组检修数字孪生仿真系统，实现全要素数字化建模、全流程仿真推演、全生命周期数据管理。
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary">
+                        <i class="fa fa-play-circle"></i>
+                        启动仿真
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="fa fa-book"></i>
+                        技术文档
+                    </button>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div class="hero-visual">
+                    <div class="hero-visual-inner">
+                        <div class="data-points">
+                            <div class="data-point"></div>
+                            <div class="data-point"></div>
+                            <div class="data-point"></div>
+                            <div class="data-point"></div>
+                            <div class="data-point"></div>
+                            <div class="data-point"></div>
+                        </div>
+                        <div class="train-model">
+                            <i class="fa fa-train"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section">
+        <div class="section-header">
+            <div class="section-label">功能模块</div>
+            <h2 class="section-title">核心功能系统</h2>
+            <p class="section-desc">从段厂仿真到部件级检修，打造全流程数字化解决方案</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-building"></i>
+                </div>
+                <h3 class="feature-title">段厂仿真模块</h3>
+                <p class="feature-desc">段厂3D场景管理、动车组调车仿真、检修台位管理、股道与库线管理、一二级修流程仿真</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-wrench"></i>
+                </div>
+                <h3 class="feature-title">检修作业孪生</h3>
+                <p class="feature-desc">检修工艺流程建模、结构化工艺卡片、作业过程仿真、工步级管控、AI智能识别集成</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-cogs"></i>
+                </div>
+                <h3 class="feature-title">部件级检修仿真</h3>
+                <p class="feature-desc">转向架、制动系统、牵引系统、车门系统、空调系统、车体及内装、电气系统检修</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-tachometer"></i>
+                </div>
+                <h3 class="feature-title">设备运行孪生</h3>
+                <p class="feature-desc">设备3D模型、状态监控、故障预警、维护计划管理、运行数据统计、能耗分析</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-database"></i>
+                </div>
+                <h3 class="feature-title">仿真数据模拟</h3>
+                <p class="feature-desc">车辆/设备运行数据、检修作业数据、人员作业数据、故障数据、环境数据模拟</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <i class="fa fa-server"></i>
+                </div>
+                <h3 class="feature-title">平台基础功能</h3>
+                <p class="feature-desc">用户管理、权限控制、系统配置、日志管理、数据备份、系统监控、API网关</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboard" class="section dashboard-section">
+        <div class="section-header">
+            <div class="section-label">实时监控</div>
+            <h2 class="section-title">段厂运行数据看板</h2>
+            <p class="section-desc">全方位实时监控段厂运营状态、检修进度与设备健康</p>
+        </div>
+        <div class="dashboard-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-line-chart"></i> 实时运营指标</h3>
+                    <button class="panel-action">
+                        <i class="fa fa-refresh"></i> 刷新
+                    </button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">在修车辆</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">85%</div>
+                        <div class="stat-label">台位利用率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">42</div>
+                        <div class="stat-label">作业人员</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">设备可用率</div>
+                    </div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-exclamation-triangle"></i> 设备与预警</h3>
+                </div>
+                <div class="device-list mb-4">
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-status online"></div>
+                            <span class="device-name">不落轮镟床</span>
+                        </div>
+                        <span class="device-metric">95% | 45°C</span>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-status online"></div>
+                            <span class="device-name">洗车机</span>
+                        </div>
+                        <span class="device-metric">90% | 2.5bar</span>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-status warning"></div>
+                            <span class="device-name">地沟设备</span>
+                        </div>
+                        <span class="device-metric">75% | 3.2g</span>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-status online"></div>
+                            <span class="device-name">立体库</span>
+                        </div>
+                        <span class="device-metric">85% | 22°C</span>
+                    </div>
+                </div>
+                <div class="alert-list">
+                    <div class="alert-item danger">
+                        <div class="alert-icon">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">地沟设备异常</div>
+                            <div class="alert-time">2026-04-20 10:30</div>
+                        </div>
+                    </div>
+                    <div class="alert-item warning">
+                        <div class="alert-icon">
+                            <i class="fa fa-exclamation-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">台位2即将超时</div>
+                            <div class="alert-time">2026-04-20 10:15</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="simulation" class="section simulation-section">
+        <div class="section-header">
+            <div class="section-label">3D仿真</div>
+            <h2 class="section-title">数字孪生仿真中心</h2>
+            <p class="section-desc">沉浸式3D场景，实时仿真检修作业流程</p>
+        </div>
+        <div class="simulation-layout">
+            <div class="simulation-viewer">
+                <div class="simulation-header">
+                    <h3 class="panel-title"><i class="fa fa-cube"></i> 段厂全景</h3>
+                    <div class="flex gap-2">
+                        <button class="panel-action"><i class="fa fa-refresh"></i></button>
+                        <button class="panel-action"><i class="fa fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="simulation-body">
+                    <div class="train-model" style="font-size: 6rem;">
+                        <i class="fa fa-train"></i>
+                    </div>
+                    <div class="simulation-controls">
+                        <div class="control-buttons">
+                            <button class="control-btn primary" id="playBtn"><i class="fa fa-play"></i></button>
+                            <button class="control-btn"><i class="fa fa-pause"></i></button>
+                            <button class="control-btn"><i class="fa fa-stop"></i></button>
+                        </div>
+                        <div class="control-info">
+                            <span>仿真时间: 00:12:45</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-list-alt"></i> 检修任务</h3>
+                </div>
+                <div class="task-item">
+                    <div class="task-header">
+                        <h4 class="task-name">CR400AF-2048 一级修</h4>
+                        <span class="task-badge active">进行中</span>
+                    </div>
+                    <div class="task-progress mt-3">
+                        <div class="task-progress-bar active" style="width: 75%;"></div>
+                    </div>
+                </div>
+                <div class="task-item">
+                    <div class="task-header">
+                        <h4 class="task-name">CRH380B-1024 二级修</h4>
+                        <span class="task-badge pending">等待中</span>
+                    </div>
+                    <div class="task-progress mt-3">
+                        <div class="task-progress-bar pending" style="width: 45%;"></div>
+                    </div>
+                </div>
+                <div class="task-item">
+                    <div class="task-header">
+                        <h4 class="task-name">CR400BF-3072 转向架检修</h4>
+                        <span class="task-badge issue">异常处理</span>
+                    </div>
+                    <div class="task-progress mt-3">
+                        <div class="task-progress-bar issue" style="width: 60%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="analytics" class="section analytics-section">
+        <div class="section-header">
+            <div class="section-label">数据分析</div>
+            <h2 class="section-title">多维度数据分析</h2>
+            <p class="section-desc">深度挖掘检修数据，支撑管理决策</p>
+        </div>
+        <div class="analytics-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-bar-chart"></i> 检修量统计</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="maintenanceChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-line-chart"></i> 质量趋势</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="qualityChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-pie-chart"></i> 故障分布</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="faultChart"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fa fa-users"></i> 人员绩效</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="section-header">
+            <div class="section-label">关于系统</div>
+            <h2 class="section-title">系统介绍与价值</h2>
+            <p class="section-desc">数字孪生技术赋能铁路运维，打造智能检修新范式</p>
+        </div>
+        <div class="about-card">
+            <h3 class="about-title"><i class="fa fa-info-circle"></i> 项目背景</h3>
+            <p class="about-text">
+                随着中国高速铁路网络的快速发展，动车组保有量持续增长，传统检修模式面临效率提升、成本降低、质量管控等挑战。本系统旨在通过数字孪生技术，为动车组检修提供智能化、可视化的解决方案，实现检修作业的数字化、智能化、可视化管理。
+            </p>
+            <h3 class="about-title"><i class="fa fa-star"></i> 核心价值</h3>
+            <div class="value-grid">
+                <div class="value-item">
+                    <div class="value-icon"><i class="fa fa-bolt"></i></div>
+                    <div class="value-text">提升检修效率</div>
+                </div>
+                <div class="value-item">
+                    <div class="value-icon"><i class="fa fa-money"></i></div>
+                    <div class="value-text">降低培训成本</div>
+                </div>
+                <div class="value-item">
+                    <div class="value-icon"><i class="fa fa-cubes"></i></div>
+                    <div class="value-text">优化资源配置</div>
+                </div>
+                <div class="value-item">
+                    <div class="value-icon"><i class="fa fa-check-circle"></i></div>
+                    <div class="value-text">提升检修质量</div>
+                </div>
+                <div class="value-item">
+                    <div class="value-icon"><i class="fa fa-chart-pie"></i></div>
+                    <div class="value-text">支撑管理决策</div>
+                </div>
+            </div>
+            <h3 class="about-title"><i class="fa fa-code"></i> 技术架构</h3>
+            <p class="about-text">
+                系统基于Unity引擎构建3D场景，采用微服务架构设计，支持多终端适配。集成AI视觉识别能力，实现智能检修指导与质量检测。采用前后端分离架构，支持高并发访问与弹性扩展。
+            </p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <div class="footer-logo-icon">
+                            <i class="fa fa-train"></i>
+                        </div>
+                        <div class="footer-logo-text">
+                            <h3>EMU DIGITAL TWIN</h3>
+                            <p>动车组检修数字孪生仿真系统</p>
+                        </div>
+                    </div>
+                    <p class="footer-desc">基于Unity引擎构建的动车组检修数字孪生仿真系统，实现全要素数字化建模、全流程仿真推演、全生命周期数据管理。</p>
+                </div>
+                <div>
+                    <h4 class="footer-title">快速链接</h4>
+                    <div class="footer-links">
+                        <a href="#dashboard">仪表盘</a>
+                        <a href="#features">功能模块</a>
+                        <a href="#simulation">仿真中心</a>
+                        <a href="#analytics">数据分析</a>
+                        <a href="#about">关于系统</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">联系我们</h4>
+                    <div class="footer-links">
+                        <div class="footer-contact-item">
+                            <i class="fa fa-envelope"></i>
+                            <span>contact@emu-dt-sim.com</span>
+                        </div>
+                        <div class="footer-contact-item">
+                            <i class="fa fa-phone"></i>
+                            <span>10086</span>
+                        </div>
+                        <div class="footer-contact-item">
+                            <i class="fa fa-map-marker"></i>
+                            <span>北京市海淀区中关村南大街5号</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">关注我们</h4>
+                    <div class="footer-social">
+                        <a href="#"><i class="fa fa-weixin"></i></a>
+                        <a href="#"><i class="fa fa-weibo"></i></a>
+                        <a href="#"><i class="fa fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">© 2026 动车组检修数字孪生仿真系统. 保留所有权利.</p>
+                <div class="footer-status">
+                    <div class="footer-status-dot"></div>
+                    <span>系统运行正常</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ChartConfig = {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            };
+
+            new Chart(document.getElementById('progressChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['CR400AF', 'CR400BF', 'CRH380A', 'CRH380B', 'CRH6A'],
+                    datasets: [{
+                        label: '检修进度',
+                        data: [75, 90, 60, 45, 30],
+                        backgroundColor: [
+                            'rgba(16,185,129,0.8)',
+                            'rgba(34,211,238,0.8)',
+                            'rgba(59,130,246,0.8)',
+                            'rgba(245,158,11,0.8)',
+                            'rgba(239,68,68,0.8)'
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    ...ChartConfig,
+                    scales: {
+                        ...ChartConfig.scales,
+                        y: {
+                            ...ChartConfig.scales.y,
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('utilizationChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '台位利用率',
+                        data: [75, 82, 78, 85, 88, 90],
+                        borderColor: 'rgba(34,211,238,1)',
+                        backgroundColor: 'rgba(34,211,238,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    ...ChartConfig,
+                    scales: {
+                        ...ChartConfig.scales,
+                        y: {
+                            ...ChartConfig.scales.y,
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('maintenanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '一级修',
+                        data: [120, 132, 101, 134, 90, 110],
+                        backgroundColor: 'rgba(59,130,246,0.8)',
+                        borderRadius: 6
+                    }, {
+                        label: '二级修',
+                        data: [30, 40, 25, 35, 20, 30],
+                        backgroundColor: 'rgba(16,185,129,0.8)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    ...ChartConfig
+                }
+            });
+
+            new Chart(document.getElementById('qualityChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '一次交验合格率',
+                        data: [85, 88, 90, 92, 94, 95],
+                        borderColor: 'rgba(16,185,129,1)',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: '返工率',
+                        data: [10, 8, 6, 5, 4, 3],
+                        borderColor: 'rgba(245,158,11,1)',
+                        backgroundColor: 'rgba(245,158,11,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    ...ChartConfig,
+                    scales: {
+                        ...ChartConfig.scales,
+                        y: {
+                            ...ChartConfig.scales.y,
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('faultChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['制动系统', '牵引系统', '转向架', '车门系统', '空调系统', '其他'],
+                    datasets: [{
+                        data: [25, 20, 15, 10, 8, 22],
+                        backgroundColor: [
+                            'rgba(59,130,246,0.8)',
+                            'rgba(34,211,238,0.8)',
+                            'rgba(16,185,129,0.8)',
+                            'rgba(245,158,11,0.8)',
+                            'rgba(239,68,68,0.8)',
+                            'rgba(107,114,128,0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('performanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['班组A', '班组B', '班组C', '班组D', '班组E'],
+                    datasets: [{
+                        label: '人均检修组数',
+                        data: [12, 15, 10, 14, 13],
+                        backgroundColor: 'rgba(59,130,246,0.8)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    ...ChartConfig
+                }
+            });
+
+            const playBtn = document.getElementById('playBtn');
+            let isPlaying = false;
+            playBtn.addEventListener('click', function() {
+                isPlaying = !isPlaying;
+                this.innerHTML = isPlaying ? '<i class="fa fa-pause"></i>' : '<i class="fa fa-play"></i>';
+                this.classList.toggle('primary', !isPlaying);
+                if (isPlaying) {
+                    this.style.background = 'rgba(255,255,255,0.05)';
+                } else {
+                    this.style.background = 'linear-gradient(135deg,var(--primary),var(--secondary))';
+                }
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                });
+            });
+
+            window.addEventListener('scroll', function() {
+                const header = document.querySelector('header');
+                if (window.scrollY > 50) {
+                    header.style.background = 'linear-gradient(180deg, rgba(2,6,23,0.98), rgba(2,6,23,0.9))';
+                } else {
+                    header.style.background = 'linear-gradient(180deg, rgba(2,6,23,0.95), rgba(2,6,23,0.8))';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                }
+            };
+
+            new Chart(document.getElementById('progressChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['CR400AF', 'CR400BF', 'CRH380A', 'CRH380B', 'CRH6A'],
+                    datasets: [{
+                        label: '检修进度',
+                        data: [75, 90, 60, 45, 30],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(34, 211, 238, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    ...ChartConfig,
+                    scales: {
+                        ...ChartConfig.scales,
+                        y: {
+                            ...ChartConfig.scales.y,
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('utilizationChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '台位利用率',
+                        data: [75, 82, 78, 85, 88, 90],
+                        borderColor: 'rgba(34, 211, 238, 1)',
+                        backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    ...ChartConfig,
+                    scales: {
+                        ...ChartConfig.scales,
+                        y: {
+                            ...ChartConfig.scales.y,
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('maintenanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '一级修',
+                        data: [120, 132, 101, 134, 90, 110],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderRadius: 6
+                    }, {
+                        label: '二级修',
+                        data: [3
