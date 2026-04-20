@@ -1,0 +1,132 @@
+# ===========================
+# EMU-DigitalTwin-Sim
+# ===========================
+
+## 忽略规则
+
+# === 操作系统 ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === IDE / 编辑器 ===
+.idea/
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+
+# === Unity ===
+src/unity/Library/
+src/unity/Temp/
+src/unity/Obj/
+src/unity/Build/
+src/unity/Builds/
+src/unity/Logs/
+src/unity/UserSettings/
+src/unity/*.csproj
+src/unity/*.unityproj
+src/unity/*.sln
+src/unity/*.suo
+src/unity/*.tmp
+src/unity/*.user
+src/unity/*.pidb
+src/unity/*.booproj
+src/unity/*.svd
+src/unity/Assets/AssetStoreTools*
+src/unity/Assets/StreamingAssets/aa*
+src/unity/Assets/StreamingAssets/UnityAnalytics*
+
+# === .NET / C# ===
+bin/
+obj/
+*.nupkg
+*.snupkg
+packages/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+.Python
+*.ipynb_checkpoints/
+
+# === 数据文件 ===
+*.csv
+*.xlsx
+*.xls
+*.sqlite
+*.db
+*.sqlite3
+!configs/**/*.json
+!configs/**/*.yaml
+!configs/**/*.yml
+
+# === 模型文件（大文件） ===
+*.fbx
+*.obj
+*.blend
+*.max
+*.ma
+*.mb
+*.usdz
+*.glb
+*.gltf
+*.asset
+*.prefab
+*.unity
+*.mat
+*.anim
+*.controller
+*.psd
+*.tga
+*.tif
+*.tiff
+!src/unity/Assets/Models/.gitkeep
+!src/unity/Assets/Prefabs/.gitkeep
+
+# === 日志 ===
+*.log
+logs/
+
+# === 环境配置（敏感信息） ===
+.env
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+*.crt
+
+# === Docker ===
+docker-compose.override.yml
+
+# === 测试覆盖率 ===
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+
+# === 临时文件 ===
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp

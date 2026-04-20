@@ -1,0 +1,46 @@
+# EditorConfig - EMU-DigitalTwin-Sim
+# https://editorconfig.org
+
+root = true
+
+# === 默认规则 ===
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# === C# / Unity ===
+[*.cs]
+indent_size = 4
+charset = utf-8-bom
+
+# === JSON ===
+[*.json]
+indent_size = 2
+
+# === YAML ===
+[*.{yml,yaml}]
+indent_size = 2
+
+# === Markdown ===
+[*.md]
+trim_trailing_whitespace = false
+
+# === Shell ===
+[*.sh]
+indent_size = 2
+
+# === Dockerfile ===
+[Dockerfile]
+indent_size = 4
+
+# === Python ===
+[*.py]
+indent_size = 4
+
+# === XML / Unity 项目文件 ===
+[*.{xml,asmdef,asmref}]
+indent_size = 2
