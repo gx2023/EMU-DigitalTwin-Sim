@@ -1,0 +1,74 @@
+.equipment-container {
+  padding: 20px 0;
+}
+
+.health-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.health-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.health-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.alerts-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.alert-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.maintenance-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.plan-icon {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.plan-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

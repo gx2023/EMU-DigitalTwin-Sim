@@ -1,0 +1,39 @@
+.home-container {
+  padding: 20px 0;
+}
+
+.hero-section {
+  margin-bottom: 40px;
+  padding: 40px 0;
+  text-align: center;
+  background: linear-gradient(135deg, #1890ff 0%, #722ed1 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 60px 20px;
+}
+
+.hero-section .ant-typography {
+  color: white;
+}
+
+.hero-section .ant-btn {
+  margin-top: 20px;
+}
+
+.statistics-section {
+  margin-bottom: 40px;
+}
+
+.features-section {
+  margin-bottom: 40px;
+}
+
+.features-section .ant-card {
+  height: 100%;
+}
+
+.features-section .ant-card-body {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+}
