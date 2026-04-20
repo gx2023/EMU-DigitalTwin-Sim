@@ -1,0 +1,21 @@
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ["src/backend/EMU.DT.FileService/EMU.DT.FileService.csproj", "EMU.DT.FileService/"]
+COPY ["src/backend/EMU.DT.Shared/EMU.DT.Shared.csproj", "EMU.DT.Shared/"]
+RUN dotnet restore "EMU.DT.FileService/EMU.DT.FileService.csproj"
+COPY src/backend/ .
+WORKDIR "/src/EMU.DT.FileService"
+RUN dotnet build "EMU.DT.FileService.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "EMU.DT.FileService.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "EMU.DT.FileService.dll"]

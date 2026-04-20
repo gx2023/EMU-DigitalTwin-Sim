@@ -1,0 +1,300 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: emu-dt-auth-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Host=postgres;Database=emu_auth_db;Username=postgres;Password=postgres"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-service
+  template:
+    metadata:
+      labels:
+        app: data-service
+    spec:
+      containers:
+        - name: data-service
+          image: emu-dt-data-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Host=postgres;Database=emu_data_db;Username=postgres;Password=postgres"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: data-service
+  ports:
+    - protocol: TCP
+      port: 5002
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simulation-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simulation-service
+  template:
+    metadata:
+      labels:
+        app: simulation-service
+    spec:
+      containers:
+        - name: simulation-service
+          image: emu-dt-simulation-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simulation-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: simulation-service
+  ports:
+    - protocol: TCP
+      port: 5003
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: device-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: device-service
+  template:
+    metadata:
+      labels:
+        app: device-service
+    spec:
+      containers:
+        - name: device-service
+          image: emu-dt-device-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: device-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: device-service
+  ports:
+    - protocol: TCP
+      port: 5004
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: algorithm-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: algorithm-service
+  template:
+    metadata:
+      labels:
+        app: algorithm-service
+    spec:
+      containers:
+        - name: algorithm-service
+          image: emu-dt-algorithm-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: algorithm-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: algorithm-service
+  ports:
+    - protocol: TCP
+      port: 5005
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: emu-dt-notification-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - protocol: TCP
+      port: 5006
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-service
+  namespace: emu-digital-twin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-service
+  template:
+    metadata:
+      labels:
+        app: file-service
+    spec:
+      containers:
+        - name: file-service
+          image: emu-dt-file-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+  namespace: emu-digital-twin
+spec:
+  selector:
+    app: file-service
+  ports:
+    - protocol: TCP
+      port: 5007
+      targetPort: 8080
