@@ -58,6 +58,7 @@
             background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08), transparent 50%);
             z-index: -1;
             animation: spin 30s linear infinite;
+            will-change: transform;
         }
 
         @keyframes spin {
@@ -343,6 +344,7 @@
         .train-model {
             font-size: 8rem;
             animation: float 6s ease-in-out infinite;
+            will-change: transform;
         }
 
         @keyframes float {
@@ -363,6 +365,7 @@
             background: var(--accent);
             border-radius: 50%;
             animation: data-pulse 2s ease-in-out infinite;
+            will-change: transform, opacity;
         }
 
         @keyframes data-pulse {
@@ -377,11 +380,8 @@
         }
 
         .data-point:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
-        .data-point:nth-child(2) { top: 30%; right: 15%; animation-delay: 0.3s; }
-        .data-point:nth-child(3) { bottom: 25%; left: 25%; animation-delay: 0.6s; }
-        .data-point:nth-child(4) { bottom: 35%; right: 20%; animation-delay: 0.9s; }
-        .data-point:nth-child(5) { top: 50%; left: 10%; animation-delay: 1.2s; }
-        .data-point:nth-child(6) { top: 45%; right: 10%; animation-delay: 1.5s; }
+        .data-point:nth-child(2) { bottom: 25%; right: 25%; animation-delay: 0.6s; }
+        .data-point:nth-child(3) { top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: 1.2s; }
 
         .section {
             max-width: 1400px;

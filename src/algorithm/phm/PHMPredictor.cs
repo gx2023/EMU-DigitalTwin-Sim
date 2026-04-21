@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EMU.DT.Algorithm.PHM
 {
     public class PHMPredictor
     {
         private Dictionary<int, DeviceHealthModel> _deviceModels;
+        private readonly object _lockObject = new object();
 
         public PHMPredictor()
         {
@@ -15,19 +17,25 @@ namespace EMU.DT.Algorithm.PHM
 
         public HealthPrediction PredictHealth(int deviceId, List<SensorData> sensorData)
         {
-            if (!_deviceModels.ContainsKey(deviceId))
+            DeviceHealthModel model;
+            
+            lock (_lockObject)
             {
-                _deviceModels[deviceId] = new DeviceHealthModel(deviceId);
+                if (!_deviceModels.TryGetValue(deviceId, out model))
+                {
+                    model = new DeviceHealthModel(deviceId);
+                    _deviceModels[deviceId] = model;
+                }
             }
 
-            var model = _deviceModels[deviceId];
             model.UpdateModel(sensorData);
 
+            var healthScore = CalculateHealthScore(sensorData);
             var prediction = new HealthPrediction
             {
                 DeviceId = deviceId,
-                CurrentHealthScore = CalculateHealthScore(sensorData),
-                RemainingUsefulLife = EstimateRUL(model, sensorData),
+                CurrentHealthScore = healthScore,
+                RemainingUsefulLife = EstimateRUL(model, healthScore),
                 HealthTrend = DetermineTrend(model.History),
                 PotentialFaults = IdentifyPotentialFaults(sensorData),
                 PredictionTimestamp = DateTime.Now
@@ -105,6 +113,21 @@ namespace EMU.DT.Algorithm.PHM
             return diagnosis;
         }
 
+        public async Task<HealthPrediction> PredictHealthAsync(int deviceId, List<SensorData> sensorData)
+        {
+            return await Task.Run(() => PredictHealth(deviceId, sensorData));
+        }
+
+        public async Task<List<Anomaly>> DetectAnomaliesAsync(List<SensorData> sensorData)
+        {
+            return await Task.Run(() => DetectAnomalies(sensorData));
+        }
+
+        public async Task<FaultDiagnosis> DiagnoseFaultAsync(int deviceId, List<SensorData> sensorData)
+        {
+            return await Task.Run(() => DiagnoseFault(deviceId, sensorData));
+        }
+
         private double CalculateHealthScore(List<SensorData> sensorData)
         {
             // 基于多传感器数据计算健康评分（0-100）
@@ -119,10 +142,9 @@ namespace EMU.DT.Algorithm.PHM
             return Math.Max(0, Math.Min(100, score));
         }
 
-        private int EstimateRUL(DeviceHealthModel model, List<SensorData> sensorData)
+        private int EstimateRUL(DeviceHealthModel model, double healthScore)
         {
             // 估算剩余使用寿命（小时）
-            double healthScore = CalculateHealthScore(sensorData);
             double degradationRate = model.CalculateDegradationRate();
 
             if (degradationRate <= 0) return 9999; // 健康状态良好

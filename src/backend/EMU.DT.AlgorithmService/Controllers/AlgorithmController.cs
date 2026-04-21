@@ -5,6 +5,7 @@ using EMU.DT.Algorithm.Scheduling;
 using EMU.DT.Algorithm.DataGeneration;
 using EMU.DT.Algorithm.Vision;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EMU.DT.AlgorithmService.Controllers
 {
@@ -34,7 +35,7 @@ namespace EMU.DT.AlgorithmService.Controllers
 
         // PHM算法接口
         [HttpPost("phm/predict")]
-        public IActionResult PredictHealth([FromBody] PHMRequest request)
+        public async Task<IActionResult> PredictHealth([FromBody] PHMRequest request)
         {
             var sensorData = request.SensorData.Select(d => new SensorData
             {
@@ -46,12 +47,12 @@ namespace EMU.DT.AlgorithmService.Controllers
                 Timestamp = d.Timestamp
             }).ToList();
 
-            var prediction = _phmPredictor.PredictHealth(request.DeviceId, sensorData);
+            var prediction = await _phmPredictor.PredictHealthAsync(request.DeviceId, sensorData);
             return Ok(prediction);
         }
 
         [HttpPost("phm/anomalies")]
-        public IActionResult DetectAnomalies([FromBody] AnomalyRequest request)
+        public async Task<IActionResult> DetectAnomalies([FromBody] AnomalyRequest request)
         {
             var sensorData = request.SensorData.Select(d => new SensorData
             {
@@ -63,12 +64,12 @@ namespace EMU.DT.AlgorithmService.Controllers
                 Timestamp = d.Timestamp
             }).ToList();
 
-            var anomalies = _phmPredictor.DetectAnomalies(sensorData);
+            var anomalies = await _phmPredictor.DetectAnomaliesAsync(sensorData);
             return Ok(anomalies);
         }
 
         [HttpPost("phm/diagnose")]
-        public IActionResult DiagnoseFault([FromBody] DiagnosisRequest request)
+        public async Task<IActionResult> DiagnoseFault([FromBody] DiagnosisRequest request)
         {
             var sensorData = request.SensorData.Select(d => new SensorData
             {
@@ -80,13 +81,13 @@ namespace EMU.DT.AlgorithmService.Controllers
                 Timestamp = d.Timestamp
             }).ToList();
 
-            var diagnosis = _phmPredictor.DiagnoseFault(request.DeviceId, sensorData);
+            var diagnosis = await _phmPredictor.DiagnoseFaultAsync(request.DeviceId, sensorData);
             return Ok(diagnosis);
         }
 
         // 路径规划算法接口
         [HttpPost("path/planning")]
-        public IActionResult PlanPath([FromBody] PathRequest request)
+        public async Task<IActionResult> PlanPath([FromBody] PathRequest request)
         {
             var start = new Node { Id = request.Start.Id, X = request.Start.X, Y = request.Start.Y };
             var goal = new Node { Id = request.Goal.Id, X = request.Goal.X, Y = request.Goal.Y };
@@ -104,13 +105,13 @@ namespace EMU.DT.AlgorithmService.Controllers
                 Points = o.Points.Select(p => new Point { X = p.X, Y = p.Y }).ToList()
             }).ToList();
 
-            var path = _pathPlanner.PlanPath(start, goal, edges, obstacles);
+            var path = await Task.Run(() => _pathPlanner.PlanPath(start, goal, edges, obstacles));
             return Ok(path);
         }
 
         // 调度优化算法接口
         [HttpPost("scheduling/optimize")]
-        public IActionResult OptimizeSchedule([FromBody] ScheduleRequest request)
+        public async Task<IActionResult> OptimizeSchedule([FromBody] ScheduleRequest request)
         {
             var tasks = request.Tasks.Select(t => new MaintenanceTask
             {
@@ -137,44 +138,44 @@ namespace EMU.DT.AlgorithmService.Controllers
                 Skills = w.Skills
             }).ToList();
 
-            var schedule = _schedulingOptimizer.OptimizeMaintenanceSchedule(tasks, bays, workers);
+            var schedule = await Task.Run(() => _schedulingOptimizer.OptimizeMaintenanceSchedule(tasks, bays, workers));
             return Ok(schedule);
         }
 
         // 数据生成算法接口
         [HttpPost("data/device")]
-        public IActionResult GenerateDeviceData([FromBody] DeviceDataRequest request)
+        public async Task<IActionResult> GenerateDeviceData([FromBody] DeviceDataRequest request)
         {
-            var data = _dataGenerator.GenerateDeviceData(request.DeviceCount, request.DataPoints);
+            var data = await Task.Run(() => _dataGenerator.GenerateDeviceData(request.DeviceCount, request.DataPoints));
             return Ok(data);
         }
 
         [HttpPost("data/vehicle")]
-        public IActionResult GenerateVehicleData([FromBody] VehicleDataRequest request)
+        public async Task<IActionResult> GenerateVehicleData([FromBody] VehicleDataRequest request)
         {
-            var data = _dataGenerator.GenerateVehicleData(request.VehicleCount, request.DataPoints);
+            var data = await Task.Run(() => _dataGenerator.GenerateVehicleData(request.VehicleCount, request.DataPoints));
             return Ok(data);
         }
 
         // 视觉检测算法接口
         [HttpPost("vision/detect")]
-        public IActionResult DetectDefects([FromBody] VisionRequest request)
+        public async Task<IActionResult> DetectDefects([FromBody] VisionRequest request)
         {
-            var result = _visualInspection.DetectDefects(request.ImagePath, request.InspectionType);
+            var result = await Task.Run(() => _visualInspection.DetectDefects(request.ImagePath, request.InspectionType));
             return Ok(result);
         }
 
         [HttpPost("vision/measure")]
-        public IActionResult MeasureWear([FromBody] MeasurementRequest request)
+        public async Task<IActionResult> MeasureWear([FromBody] MeasurementRequest request)
         {
-            var measurement = _visualInspection.MeasureWear(request.ImagePath, request.MeasurementType);
+            var measurement = await Task.Run(() => _visualInspection.MeasureWear(request.ImagePath, request.MeasurementType));
             return Ok(new { measurement });
         }
 
         [HttpPost("vision/analyze")]
-        public IActionResult AnalyzeImage([FromBody] AnalysisRequest request)
+        public async Task<IActionResult> AnalyzeImage([FromBody] AnalysisRequest request)
         {
-            var result = _visualInspection.AnalyzeImage(request.ImagePath, request.AnalysisType);
+            var result = await Task.Run(() => _visualInspection.AnalyzeImage(request.ImagePath, request.AnalysisType));
             return Ok(result);
         }
     }
